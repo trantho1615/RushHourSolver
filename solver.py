@@ -1,44 +1,54 @@
 from collections import deque
 
-def bfs(initilia_state, max_depth=25):
+from collections import deque
+
+def bfs(initial_state, max_depth=100):
     """
-    Find solutions to given Problem board using breadth first search.
-    Returns a dictionary with named fields:
-        visited: the number of configurations visited in the search
-        solutions: paths to the goal state
-        depth_states: the number of states visited at each depth
+    Breadth-First Search solver for the Rush Hour puzzle.
 
-    Arguments:
-        r: A Problem board.
+    Args:
+        initial_state (Problem): The initial board configuration.
+        max_depth (int): Maximum search depth to prevent infinite loops.
 
-    Keyword Arguments:
-        max_depth: Maximum depth to traverse in search (default=25)
+    Returns:
+        dict: {
+            'visited': Set of visited states,
+            'solutions': List of solution paths (each is a tuple of Problem states),
+            'depth_states': Dict of {depth: number of states at that depth}
+        }
     """
     visited = set()
-    solutions = list()
-    depth_states = dict()
+    solutions = []
+    depth_states = {}
 
+    # queue holds tuples of (current_state, path_to_state)
     queue = deque()
-    queue.appendleft((initilia_state, tuple()))
-    while len(queue) != 0:
-        board, path = queue.pop()
-        new_path = path + tuple([board])
+    queue.appendleft((initial_state, tuple()))
 
-        depth_states[len(new_path)] = depth_states.get(len(new_path), 0) + 1
+    while queue:
+        current, path = queue.pop()
+        new_path = path + (current,)
 
-        if len(new_path) >= max_depth:
-            break
+        depth = len(new_path)
+        depth_states[depth] = depth_states.get(depth, 0) + 1
 
-        if board in visited:
+        # Limit search depth to avoid infinite loops in complex unsolvable boards
+        if depth > max_depth:
             continue
-        else:
-            visited.add(board)
 
-        if board.solved():
+        if current in visited:
+            continue
+        visited.add(current)
+
+        if current.solved():
             solutions.append(new_path)
-        else:   
-            queue.extendleft((move, new_path) for move in board.moves())
+            continue  # Optional: break here if you only want one solution
 
-    return {'visited': visited,
-            'solutions': solutions,
-            'depth_states': depth_states}
+        for move in current.moves():
+            queue.appendleft((move, new_path))
+
+    return {
+        'visited': visited,
+        'solutions': solutions,
+        'depth_states': depth_states
+    }
