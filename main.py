@@ -122,3 +122,6 @@ if __name__ == '__main__':
         print('Solution: {0}'.format(', '.join(solution_steps(solution))))
 
     print('{0} Nodes visited'.format(len(results['visited'])))
+
+
+
