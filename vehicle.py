@@ -58,6 +58,9 @@ class Vehicle(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __lt__(self, other):
+        return self.id < other.id
+
     def __repr__(self):
         return "Vehicle({0}, {1}, {2}, {3})".format(self.id, self.x, self.y,
                                                     self.orientation)

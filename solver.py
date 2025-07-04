@@ -1,4 +1,5 @@
 from collections import deque
+import heapq
 
 def bfs(initilia_state, max_depth=25):
     """
@@ -42,3 +43,39 @@ def bfs(initilia_state, max_depth=25):
     return {'visited': visited,
             'solutions': solutions,
             'depth_states': depth_states}
+
+def ucs(initial_state):
+    """
+    Find solutions to the given problem board using Uniform Cost Search.
+    Returns a dictionary with named fields:
+        visited: the set of configurations visited in the search
+        solutions: a list of paths to the goal state
+    """
+    visited = set()
+    solutions = list()
+    
+    # Priority queue stores tuples of (cost, path, board)
+    priority_queue = [(0, [initial_state], initial_state)]
+    
+    while priority_queue:
+        cost, path, board = heapq.heappop(priority_queue)
+        
+        if board in visited:
+            continue
+        
+        visited.add(board)
+        
+        if board.solved():
+            solutions.append(path)
+            # Since we want to find all solutions, we continue searching
+            # If we only wanted the optimal solution, we could break here
+            continue
+
+        for move in board.moves():
+            if move not in visited:
+                moved_vehicle = list(board.vehicles - move.vehicles)[0]
+                new_cost = cost + moved_vehicle.length
+                new_path = path + [move]
+                heapq.heappush(priority_queue, (new_cost, new_path, move))
+                
+    return {'visited': visited, 'solutions': solutions}

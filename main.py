@@ -1,6 +1,6 @@
 import sys
 from vehicle import Vehicle
-from solver import bfs
+from solver import ucs, bfs
 
 GOAL_VEHICLE = Vehicle('X', 4, 2, 'H')
 
@@ -23,6 +23,9 @@ class Problem(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def __lt__(self, other):
+        return hash(self) < hash(other)
 
     def __repr__(self):
         s = '-' * 8 + '\n'
@@ -56,7 +59,7 @@ class Problem(object):
     def moves(self):
         """Return iterator of next possible moves."""
         board = self.get_board()
-        for v in self.vehicles:
+        for v in sorted(list(self.vehicles)):
             if v.orientation == 'H':
                 if v.x - 1 >= 0 and board[v.y][v.x - 1] == ' ':
                     new_v = Vehicle(v.id, v.x - 1, v.y, v.orientation)
@@ -115,7 +118,8 @@ if __name__ == '__main__':
     with open(filename) as rushhour_file:
         problem = load_file(rushhour_file)
 
-    results = bfs(problem, max_depth=100)
+    #results = bfs(problem)
+    results = ucs(problem)
 
     print('{0} Solutions found'.format(len(results['solutions'])))
     for solution in results['solutions']:
