@@ -1,63 +1,74 @@
-CAR_IDS = {'X', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'}
-TRUCK_IDS = {'O', 'P', 'Q', 'R'}
+import copy
 
-class Vehicle(object):
-    """A configuration of a single vehicle."""
+class Vehicle:
+    def __init__(self, vid, x, y, length, orientation):
+        self.id = vid
+        self.x = x
+        self.y = y
+        self.length = length
+        self.orientation = orientation  # 'H' or 'V'
 
-    def __init__(self, id, x, y, orientation):
-        """Create a new vehicle.
-        
-        Arguments:
-            id: a valid car or truck id character
-            x: the x coordinate of the top left corner of the vehicle (0-5)
-            y: the y coordinate of the top left corner of the vehicle (0-5)
-            orientation: either the vehicle is vertical (V) or horizontal (H)
+    def cells(self):
+        return [(self.x + i if self.orientation == 'H' else self.x,
+                 self.y + i if self.orientation == 'V' else self.y)
+                for i in range(self.length)]
 
-        Exceptions:
-            ValueError: on invalid id, x, y, or orientation
-        """
-        if id in CAR_IDS:
-            self.id = id
-            self.length = 2
-        elif id in TRUCK_IDS:
-            self.id = id
-            self.length = 3
+    def move(self, direction):
+        if self.orientation == 'H':
+            return Vehicle(self.id, self.x + direction, self.y, self.length, self.orientation)
         else:
-            raise ValueError('Invalid id {0}'.format(id))
-
-        if 0 <= x <= 5:
-            self.x = x
-        else:
-            raise ValueError('Invalid x {0}'.format(x))
-
-        if 0 <= y <= 5:
-            self.y = y
-        else:
-            raise ValueError('Invalid y {0}'.format(y))
-
-        if orientation == 'H':
-            self.orientation = orientation
-            x_end = self.x + (self.length - 1)
-            y_end = self.y
-        elif orientation == 'V':
-            self.orientation = orientation
-            x_end = self.x
-            y_end = self.y + (self.length - 1)
-        else:
-            raise ValueError('Invalid orientation {0}'.format(orientation))
-
-        if x_end > 5 or y_end > 5:
-            raise ValueError('Invalid configuration')
-
-    def __hash__(self):
-        return hash(self.__repr__())
+            return Vehicle(self.id, self.x, self.y + direction, self.length, self.orientation)
 
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return (self.id, self.x, self.y) == (other.id, other.x, other.y)
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
+    def __hash__(self):
+        return hash((self.id, self.x, self.y))
 
-    def __repr__(self):
-        return "Vehicle({0}, {1}, {2}, {3})".format(self.id, self.x, self.y,
-                                                    self.orientation)
+class State:
+    def __init__(self, vehicles, size=6):
+        self.size = size
+        self.vehicles = {v.id: v for v in vehicles}
+        self.grid = [['.' for _ in range(size)] for _ in range(size)]
+        for v in vehicles:
+            for x, y in v.cells():
+                self.grid[y][x] = v.id
+        self.key = self._generate_key()
+
+    def _generate_key(self):
+        return tuple((v.id, v.x, v.y) for v in sorted(self.vehicles.values(), key=lambda v: v.id))
+
+    def is_goal(self):
+        red = self.vehicles['X']
+        return red.orientation == 'H' and red.x + red.length == self.size
+
+    def get_moves(self):
+        next_states = []
+        for vid, v in self.vehicles.items():
+            for d in [-1, 1]:
+                moved = v.move(d)
+                valid = True
+                for x, y in moved.cells():
+                    if not (0 <= x < self.size and 0 <= y < self.size):
+                        valid = False
+                        break
+                    if (x, y) not in v.cells() and self.grid[y][x] != '.':
+                        valid = False
+                        break
+                if valid:
+                    new_vehicles = copy.deepcopy(list(self.vehicles.values()))
+                    for i in range(len(new_vehicles)):
+                        if new_vehicles[i].id == vid:
+                            new_vehicles[i] = moved
+                            break
+                    next_states.append((State(new_vehicles, self.size), v.length))
+        return next_states
+
+    def __eq__(self, other):
+        return self.key == other.key
+
+    def __hash__(self):
+        return hash(self.key)
+
+    def __lt__(self, other):
+        return False  # required for heapq

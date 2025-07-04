@@ -1,44 +1,35 @@
-from collections import deque
+import heapq
+from vehicle import State  # import State from vehicle.py
 
-def bfs(initilia_state, max_depth=25):
-    """
-    Find solutions to given Problem board using breadth first search.
-    Returns a dictionary with named fields:
-        visited: the number of configurations visited in the search
-        solutions: paths to the goal state
-        depth_states: the number of states visited at each depth
+def heuristic(state):
+    red = state.vehicles['X']
+    x_end = red.x + red.length
+    y = red.y
+    return sum(1 for x in range(x_end, state.size) if state.grid[y][x] != '.')
 
-    Arguments:
-        r: A Problem board.
-
-    Keyword Arguments:
-        max_depth: Maximum depth to traverse in search (default=25)
-    """
+def a_star_solver(start_state):
+    frontier = []
+    heapq.heappush(frontier, (heuristic(start_state), 0, [start_state], start_state))
     visited = set()
-    solutions = list()
-    depth_states = dict()
 
-    queue = deque()
-    queue.appendleft((initilia_state, tuple()))
-    while len(queue) != 0:
-        board, path = queue.pop()
-        new_path = path + tuple([board])
-
-        depth_states[len(new_path)] = depth_states.get(len(new_path), 0) + 1
-
-        if len(new_path) >= max_depth:
-            break
-
-        if board in visited:
+    while frontier:
+        f, g, path, current = heapq.heappop(frontier)
+        if current in visited:
             continue
-        else:
-            visited.add(board)
+        visited.add(current)
 
-        if board.solved():
-            solutions.append(new_path)
-        else:   
-            queue.extendleft((move, new_path) for move in board.moves())
+        if current.is_goal():
+            return {
+                'solution': path,
+                'visited': len(visited),
+                'steps': len(path) - 1,
+                'cost': g
+            }
 
-    return {'visited': visited,
-            'solutions': solutions,
-            'depth_states': depth_states}
+        for next_state, move_cost in current.get_moves():
+            if next_state not in visited:
+                new_g = g + move_cost
+                new_f = new_g + heuristic(next_state)
+                heapq.heappush(frontier, (new_f, new_g, path + [next_state], next_state))
+
+    return None
