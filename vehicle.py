@@ -1,6 +1,5 @@
 CAR_IDS = {'X', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'}
 TRUCK_IDS = {'O', 'P', 'Q', 'R'}
-""" Goal vehicle ID: X"""
 
 class Vehicle(object):
     """A configuration of a single vehicle."""
