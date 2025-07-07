@@ -1,10 +1,8 @@
 import sys
 from vehicle import Vehicle
-from solver import ucs, bfs, dfs, dls, a_star_solver
-import time
-import tracemalloc
+from solver import ucs, bfs
 
-
+GOAL_VEHICLE = Vehicle('X', 4, 2, 'H')
 
 
 class Problem(object):
@@ -15,14 +13,8 @@ class Problem(object):
 
         Arguments:
             vehicles: a set of Vehicle objects.
-        Goal vehicle ID: X
         """
         self.vehicles = vehicles
-        self.goal_vehicle = None
-        for v in self.vehicles:
-            if v.id == 'X':
-                self.goal_vehicle = v
-                break
 
     def __hash__(self):
         return hash(self.__repr__())
@@ -62,11 +54,8 @@ class Problem(object):
         return board
 
     def solved(self):
-        for v in self.vehicles:
-            if v.id == 'X' and v.orientation == 'H':
-                if v.x + v.length - 1 == 5:
-                    return True
-        return False
+        """Returns true if the board is in a solved state."""
+        return GOAL_VEHICLE in self.vehicles
 
     def moves(self):
         """Return iterator of next possible moves."""
@@ -108,6 +97,7 @@ def load_file(rushhour_file):
         vehicles.append(Vehicle(id, int(x), int(y), orientation))
     return Problem(set(vehicles))
 
+
 def solution_steps(solution):
     """Generate list of steps from a solution path."""
     steps = []
@@ -131,32 +121,11 @@ if __name__ == '__main__':
     with open(filename) as rushhour_file:
         problem = load_file(rushhour_file)
 
-    algorithm = sys.argv[2] if len(sys.argv) > 2 else 'a*'
+    # results = bfs(problem)
+    results = ucs(problem)
 
-    """syntax: python main.py map/p1 a*"""
-
-    tracemalloc.start()
-    start_time = time.time()
-
-    if algorithm == 'bfs':
-        results = bfs(problem)
-    elif algorithm == 'dfs':
-        results = dfs(problem)
-    elif algorithm == 'ucs':
-        results = ucs(problem)
-    elif algorithm == 'a*':
-        results = a_star_solver(problem)
-    elif algorithm == 'dls':
-        results =  dls(problem)
-
-    end_time = time.time()
-    current, peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-
-    print(f"{len(results['solutions'])} Solutions found")
+    print('{0} Solutions found'.format(len(results['solutions'])))
     for solution in results['solutions']:
-        print('Solution:', ', '.join(solution_steps(solution)))
+        print('Solution: {0}'.format(', '.join(solution_steps(solution))))
 
-    print(f"{len(results['visited'])} Nodes visited")
-    print(f"Time taken: {end_time - start_time:.4f} seconds")
-    print(f"Peak memory used: {peak / 1024:.2f} KB")
+    print('{0} Nodes visited'.format(len(results['visited'])))
