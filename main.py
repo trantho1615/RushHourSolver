@@ -1,8 +1,7 @@
 import sys
 from vehicle import Vehicle
-from solver import bfs
-
-GOAL_VEHICLE = Vehicle('X', 4, 2, 'H')
+from solver import bfs, dfs, dls
+from constants import *
 
 class Problem(object):
     """A configuration of a single Rush Hour board."""
@@ -25,20 +24,15 @@ class Problem(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        s = '-' * 8 + '\n'
+        s = '-' * (BOARD_SIZE + 2) + '\n'
         for line in self.get_board():
             s += '|{0}|\n'.format(''.join(line))
-        s += '-' * 8 + '\n'
+        s += '-' * (BOARD_SIZE + 2) + '\n'
         return s
 
     def get_board(self):
         """Representation of the Rush Hour board as a 2D list of strings"""
-        board = [[' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' '],
-                 [' ', ' ', ' ', ' ', ' ', ' ']]
+        board = [[' ' for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
         for vehicle in self.vehicles:
             x, y = vehicle.x, vehicle.y
             if vehicle.orientation == 'H':
@@ -64,7 +58,7 @@ class Problem(object):
                     new_vehicles.remove(v)
                     new_vehicles.add(new_v)
                     yield Problem(new_vehicles)
-                if v.x + v.length <= 5 and board[v.y][v.x + v.length] == ' ':
+                if v.x + v.length <= BOARD_SIZE - 1 and board[v.y][v.x + v.length] == ' ':
                     new_v = Vehicle(v.id, v.x + 1, v.y, v.orientation)
                     new_vehicles = self.vehicles.copy()
                     new_vehicles.remove(v)
@@ -77,7 +71,7 @@ class Problem(object):
                     new_vehicles.remove(v)
                     new_vehicles.add(new_v)
                     yield Problem(new_vehicles)
-                if v.y + v.length <= 5 and board[v.y + v.length][v.x] == ' ':
+                if v.y + v.length <= BOARD_SIZE - 1 and board[v.y + v.length][v.x] == ' ':
                     new_v = Vehicle(v.id, v.x, v.y + 1, v.orientation)
                     new_vehicles = self.vehicles.copy()
                     new_vehicles.remove(v)
@@ -114,11 +108,12 @@ if __name__ == '__main__':
     filename = sys.argv[1]
     with open(filename) as rushhour_file:
         problem = load_file(rushhour_file)
-
-    results = bfs(problem, max_depth=100)
-
-    print('{0} Solutions found'.format(len(results['solutions'])))
-    for solution in results['solutions']:
-        print('Solution: {0}'.format(', '.join(solution_steps(solution))))
-
-    print('{0} Nodes visited'.format(len(results['visited'])))
+    results = dls(problem)
+    print("BFS solution depth:", len(results['solutions'][0]))
+    if not results['solutions']:
+        print('No solution found.')
+    else:
+        print('{0} Solutions found'.format(len(results['solutions'])))
+        for solution in results['solutions']:
+            print('Solution length: {0}'.format(len(solution)))
+            print('Solution: {0}'.format(', '.join(solution_steps(solution))))
