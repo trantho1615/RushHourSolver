@@ -1,8 +1,8 @@
 from collections import deque
 import heapq
 
-
-def bfs(initilia_state, max_depth=60):
+"""python main.py Map/p1 a*"""
+def bfs(initilia_state, max_depth=100):
     """
     Find solutions to given Problem board using breadth first search.
     Returns a dictionary with named fields:
@@ -175,25 +175,21 @@ def dfs(initial_state):
 
         if board.solved():
             solutions.append(new_path)
-            # Return immediately after finding the first solution
-            return {'visited': visited,
-                    'solutions': solutions,
-                    'depth_states': depth_states}
         else:
             stack.extend((move, new_path) for move in board.moves())
 
-    # No solution found, return empty solutions
+    # Return all found solutions
     return {'visited': visited,
-            'solutions': [],
+            'solutions': solutions,
             'depth_states': depth_states}
 
-def dls(initial_state, limit=25):
-    visited = dict()
+def dls(initial_state, limit=100):
+    visited = dict()       #Must use dict to track depth
     solutions = []
     depth_states = dict()
 
     stack = []
-    stack.append((initial_state, tuple()))
+    stack.append((initial_state, tuple()))  # (state, path)
 
     while stack:
         board, path = stack.pop()
@@ -208,18 +204,13 @@ def dls(initial_state, limit=25):
 
         if board.solved():
             solutions.append(new_path)
-            return {
-                'solutions': solutions,
-                'depth_states': depth_states,
-                'visited': visited
-            }
-
-        if depth < limit:
+        elif depth < limit:
             for move in board.moves():
                 stack.append((move, new_path))
 
+    # Return all found solutions within the limit
     return {
-        'solutions': [],
+        'solutions': solutions,
         'depth_states': depth_states,
         'visited': visited
     }
