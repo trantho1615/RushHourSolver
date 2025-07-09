@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
 from vehicle import Vehicle
-from main import Problem  # Dùng lớp Problem từ main.py
-from solver import ucs  # Bạn có thể thay bằng bfs nếu muốn
+from main import Problem  
+from solver import ucs  
 
 CELL_SIZE = 80
 GRID_SIZE = 6
