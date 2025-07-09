@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from vehicle import Vehicle
 from main import Problem
-from solver import bfs, dfs, ucs, a_star  # Tất cả solver trong 1 file
+from solver import bfs, dfs, ucs, a_star 
 
 CELL_SIZE = 80
 GRID_SIZE = 6
@@ -74,7 +74,7 @@ class RushHourGUI:
             return
 
         if not result['solutions']:
-            messagebox.showinfo("No solution", "Không tìm thấy lời giải.")
+            messagebox.showinfo("No solution.")
             return
 
         self.solution = result['solutions'][0]
@@ -114,7 +114,7 @@ class RushHourGUI:
             self.root.after(500, self.animate)
         elif self.current_step >= len(self.solution):
             self.playing = False
-            messagebox.showinfo("Done", "Hoàn tất lời giải.")
+            messagebox.showinfo("Done")
 
 if __name__ == "__main__":
     root = tk.Tk()
