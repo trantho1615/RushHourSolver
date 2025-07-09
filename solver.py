@@ -1,16 +1,18 @@
 import heapq
-from vehicle import State  # import State from vehicle.py
 
-def heuristic(state):
-    red = state.vehicles['X']
-    x_end = red.x + red.length
-    y = red.y
-    return sum(1 for x in range(x_end, state.size) if state.grid[y][x] != '.')
+def heuristic(problem):
+    board = problem.get_board()
+    for v in problem.vehicles:
+        if v.id == 'X':
+            x_end = v.x + v.length
+            row = v.y
+            return sum(1 for x in range(x_end, 6) if board[row][x] != ' ')
+    return 0
 
-def a_star_solver(start_state):
-    frontier = []
-    heapq.heappush(frontier, (heuristic(start_state), 0, [start_state], start_state))
+def a_star(problem):
     visited = set()
+    frontier = []
+    heapq.heappush(frontier, (heuristic(problem), 0, [problem], problem))
 
     while frontier:
         f, g, path, current = heapq.heappop(frontier)
@@ -18,18 +20,13 @@ def a_star_solver(start_state):
             continue
         visited.add(current)
 
-        if current.is_goal():
-            return {
-                'solution': path,
-                'visited': len(visited),
-                'steps': len(path) - 1,
-                'cost': g
-            }
+        if current.solved():
+            return {'visited': visited, 'solutions': [path]}
 
-        for next_state, move_cost in current.get_moves():
+        for next_state in current.moves():
             if next_state not in visited:
-                new_g = g + move_cost
-                new_f = new_g + heuristic(next_state)
-                heapq.heappush(frontier, (new_f, new_g, path + [next_state], next_state))
+                moved = list(current.vehicles - next_state.vehicles)[0]
+                cost = moved.length
+                heapq.heappush(frontier, (g + cost + heuristic(next_state), g + cost, path + [next_state], next_state))
 
-    return None
+    return {'visited': visited, 'solutions': []}
