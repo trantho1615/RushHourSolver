@@ -1,88 +1,99 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
+import pygame
+import os
 from vehicle import Vehicle
 from main import Problem
-from solver import bfs, dfs, ucs, a_star 
+from solver import bfs, dfs, ucs, a_star_solver
+import time
 
+# Constants
 CELL_SIZE = 80
 GRID_SIZE = 6
+SCREEN_WIDTH = CELL_SIZE * GRID_SIZE
+SCREEN_HEIGHT = CELL_SIZE * GRID_SIZE + 80
 
-class RushHourGUI:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Rush Hour Solver")
-        self.canvas = tk.Canvas(root, width=CELL_SIZE*GRID_SIZE, height=CELL_SIZE*GRID_SIZE)
-        self.canvas.grid(row=0, column=0, columnspan=4)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (200, 50, 50)
+BLUE = (100, 180, 255)
 
-        self.algorithm = tk.StringVar(value='UCS')
-        self.playing = False
-        self.current_step = 0
+pygame.init()
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Rush Hour Solver (Pygame)")
+font = pygame.font.SysFont("Arial", 20)
+
+clock = pygame.time.Clock()
+
+class GUI:
+    def __init__(self):
+        self.problem = None
         self.solution = []
+        self.current_step = 0
+        self.playing = False
+        self.vehicles = set()
 
-        tk.Label(root, text="Algorithm:").grid(row=1, column=0)
-        algo_menu = ttk.Combobox(root, textvariable=self.algorithm, values=['UCS', 'BFS', 'DFS', 'A*'], state="readonly")
-        algo_menu.grid(row=1, column=1)
+        self.selected_map = None
+        self.algorithm = 'UCS'
 
-        tk.Button(root, text="Solve", command=self.solve).grid(row=1, column=2)
-        tk.Button(root, text="Play", command=self.play).grid(row=1, column=3)
-        tk.Button(root, text="Pause", command=self.pause).grid(row=2, column=0)
-        tk.Button(root, text="Reset", command=self.reset).grid(row=2, column=1)
-
-        self.stats_label = tk.Label(root, text="Steps: 0 | Cost: 0")
-        self.stats_label.grid(row=2, column=2, columnspan=2)
-
-        self.init_game()
-
-    def init_game(self):
-        self.vehicles = {
-            Vehicle('X', 1, 2, 'H'),
-            Vehicle('A', 0, 0, 'V'),
-            Vehicle('B', 3, 0, 'V'),
-            Vehicle('C', 5, 0, 'V'),
-            Vehicle('D', 0, 3, 'H'),
-            Vehicle('E', 4, 3, 'V'),
-            Vehicle('F', 2, 5, 'H'),
-        }
+    def load_map(self, filename):
+        self.vehicles = set()
+        with open(os.path.join("Map", filename), "r") as file:
+            for line in file:
+                line = line.strip()
+                if len(line) != 4:
+                    continue
+                vid = line[0]
+                row = int(line[1])
+                col = int(line[2])
+                orient = line[3]
+                self.vehicles.add(Vehicle(vid, col, row, orient))
         self.problem = Problem(self.vehicles)
-        self.draw_board(self.problem)
+        self.solution = []
+        self.current_step = 0
 
     def draw_board(self, problem):
+        screen.fill(WHITE)
         board = problem.get_board()
-        self.canvas.delete("all")
         for y in range(GRID_SIZE):
             for x in range(GRID_SIZE):
+                rect = pygame.Rect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                pygame.draw.rect(screen, BLACK, rect, 1)
                 cell = board[y][x]
                 if cell != ' ':
-                    color = 'red' if cell == 'X' else 'skyblue'
-                    x0, y0 = x * CELL_SIZE, y * CELL_SIZE
-                    x1, y1 = x0 + CELL_SIZE, y0 + CELL_SIZE
-                    self.canvas.create_rectangle(x0, y0, x1, y1, fill=color, outline="black", width=2)
-                    self.canvas.create_text((x0+x1)//2, (y0+y1)//2, text=cell, font=("Arial", 14, "bold"))
+                    color = RED if cell == 'X' else BLUE
+                    pygame.draw.rect(screen, color, rect)
+                    text = font.render(cell, True, BLACK)
+                    text_rect = text.get_rect(center=rect.center)
+                    screen.blit(text, text_rect)
+
+        # Draw info
+        pygame.draw.rect(screen, (230, 230, 230), (0, SCREEN_HEIGHT - 80, SCREEN_WIDTH, 80))
+        info = f"Map: {self.selected_map or 'None'} | Algorithm: {self.algorithm} | Step: {self.current_step}/{len(self.solution)-1 if self.solution else 0}"
+        cost_text = font.render(info, True, BLACK)
+        screen.blit(cost_text, (10, SCREEN_HEIGHT - 70))
+
+        if self.solution:
+            cost = self.calculate_cost(self.solution)
+            cost_label = font.render(f"Total Cost: {cost}", True, BLACK)
+            screen.blit(cost_label, (10, SCREEN_HEIGHT - 40))
 
     def solve(self):
-        algo = self.algorithm.get()
-        if algo == 'UCS':
+        if not self.problem:
+            return
+        if self.algorithm == 'UCS':
             result = ucs(self.problem)
-        elif algo == 'BFS':
+        elif self.algorithm == 'BFS':
             result = bfs(self.problem)
-        elif algo == 'DFS':
+        elif self.algorithm == 'DFS':
             result = dfs(self.problem)
-        elif algo == 'A*':
-            result = a_star(self.problem)
+        elif self.algorithm == 'A*':
+            result = a_star_solver(self.problem)
         else:
-            messagebox.showerror("Error", "Unknown algorithm selected.")
             return
-
         if not result['solutions']:
-            messagebox.showinfo("No solution.")
+            print("No solution found.")
             return
-
         self.solution = result['solutions'][0]
         self.current_step = 0
-        self.stats_label.config(
-            text=f"Steps: {len(self.solution) - 1} | Cost: {self.calculate_cost(self.solution)}"
-        )
-        self.draw_board(self.solution[0])
 
     def calculate_cost(self, solution):
         cost = 0
@@ -91,32 +102,67 @@ class RushHourGUI:
             cost += moved.length
         return cost
 
-    def play(self):
-        if not self.solution:
-            return
-        self.playing = True
-        self.animate()
-
-    def pause(self):
-        self.playing = False
-
-    def reset(self):
-        self.playing = False
-        self.current_step = 0
-        self.solution = []
-        self.stats_label.config(text="Steps: 0 | Cost: 0")
-        self.draw_board(self.problem)
-
     def animate(self):
-        if self.playing and self.current_step < len(self.solution):
+        if self.playing and self.solution and self.current_step < len(self.solution):
             self.draw_board(self.solution[self.current_step])
+            pygame.display.flip()
             self.current_step += 1
-            self.root.after(500, self.animate)
+            time.sleep(0.5)
         elif self.current_step >= len(self.solution):
             self.playing = False
-            messagebox.showinfo("Done")
+
+def run():
+    gui = GUI()
+
+    # Select map file from list
+    maps = [f for f in os.listdir("Map") if f.endswith(".txt")]
+    print("Available maps:")
+    for idx, name in enumerate(maps):
+        print(f"{idx + 1}. {name}")
+    map_idx = int(input("Select map number: ")) - 1
+    gui.selected_map = maps[map_idx]
+    gui.load_map(gui.selected_map)
+
+    # Select algorithm
+    algo = input("Select algorithm [UCS, BFS, DFS, A*]: ").strip().upper()
+    if algo in ['UCS', 'BFS', 'DFS', 'A*']:
+        gui.algorithm = algo
+    else:
+        gui.algorithm = 'UCS'
+
+    gui.draw_board(gui.problem)
+    pygame.display.flip()
+
+    # Main loop
+    running = True
+    while running:
+        gui.draw_board(gui.solution[gui.current_step] if gui.solution else gui.problem)
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:      # Play/Pause
+                    gui.playing = not gui.playing
+                elif event.key == pygame.K_r:        # Reset
+                    gui.current_step = 0
+                    gui.playing = False
+                elif event.key == pygame.K_s:        # Solve
+                    gui.solve()
+                elif event.key == pygame.K_RIGHT:    # Step forward
+                    if gui.solution and gui.current_step < len(gui.solution) - 1:
+                        gui.current_step += 1
+                elif event.key == pygame.K_LEFT:     # Step backward
+                    if gui.solution and gui.current_step > 0:
+                        gui.current_step -= 1
+
+        if gui.playing:
+            gui.animate()
+
+        clock.tick(30)
+
+    pygame.quit()
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = RushHourGUI(root)
-    root.mainloop()
+    run()
