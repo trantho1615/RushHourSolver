@@ -135,30 +135,42 @@ def draw_game_ui():
     pygame.draw.rect(screen, (245, 245, 245), (20, 20, 200, 560))
 
     # Rounded title box
-    title_box = pygame.Rect(30, 30, 140, 40)
+    title_text = font.render("Rush Hour", True, BLACK)
+    title_rect = title_text.get_rect()
+    title_box_width = title_rect.width + 20
+    title_box_height = title_rect.height + 10
+
+    # Center horizontally inside the left panel (20 → 220 width)
+    title_box = pygame.Rect(
+        20 + (200 - title_box_width) // 2,
+        30,
+        title_box_width,
+        title_box_height
+    )
+
     pygame.draw.rect(screen, (180, 220, 255), title_box, border_radius=10)
     pygame.draw.rect(screen, BLACK, title_box, 2, border_radius=10)
-    screen.blit(font.render("Rush Hour", True, BLACK), title_box.move(10, 10))
+    screen.blit(title_text, title_text.get_rect(center=title_box.center))
 
-    # Map Selector
-    screen.blit(font.render("Board:", True, BLACK), (30, 90))
-    pygame.draw.rect(screen, (210, 210, 255), (100, 90, 80, 25), border_radius=6)
-    pygame.draw.rect(screen, (150, 180, 255), (90, 90, 20, 25), border_radius=6)
-    pygame.draw.rect(screen, (150, 180, 255), (193, 90, 20, 25), border_radius=6)
-    screen.blit(font.render("<", True, BLACK), (95, 92))
-    screen.blit(font.render(">", True, BLACK), (195, 92))
-    screen.blit(font.render(maps[map_idx], True, BLACK), (110, 92))
 
-    # Solver Selector
-    screen.blit(font.render("Solver:", True, BLACK), (30, 125))
-    pygame.draw.rect(screen, (210, 210, 255), (110, 125, 80, 25), border_radius=6)
-    pygame.draw.rect(screen, (150, 180, 255), (90, 125, 20, 25), border_radius=6)
-    pygame.draw.rect(screen, (150, 180, 255), (193, 125, 20, 25), border_radius=6)
-    screen.blit(font.render("<", True, BLACK), (95, 127))
-    screen.blit(font.render(">", True, BLACK), (195, 127))
-    screen.blit(font.render(solvers[solver_idx], True, BLACK), (110, 127))
+    # Map selector
+    screen.blit(font.render("Board:", True, BLACK), (30, 70))
+    pygame.draw.rect(screen, GRAY, (100, 70, 80, 25))
+    pygame.draw.rect(screen, (180, 180, 180), (90, 70, 20, 25))
+    pygame.draw.rect(screen, (180, 180, 180), (193, 70, 20, 25))
+    screen.blit(font.render("<", True, BLACK), (95, 72))
+    screen.blit(font.render(">", True, BLACK), (195, 72))
+    screen.blit(font.render(maps[map_idx], True, BLACK), (110, 72))
 
-    pygame.draw.line(screen, GRAY, (30, 160), (200, 160), 2)
+    # Solver selector
+    screen.blit(font.render("Solver:", True, BLACK), (30, 100))
+    pygame.draw.rect(screen, GRAY, (110, 100, 80, 25))
+    pygame.draw.rect(screen, (180, 180, 180), (90, 100, 20, 25))
+    pygame.draw.rect(screen, (180, 180, 180), (193, 100, 20, 25))
+    screen.blit(font.render("<", True, BLACK), (95, 102))
+    screen.blit(font.render(">", True, BLACK), (195, 102))
+    screen.blit(font.render(solvers[solver_idx], True, BLACK), (110, 102))
+    pygame.draw.line(screen, GRAY, (30, 135), (200, 135), 2)
 
     # Rounded Action Buttons (Solve, Play, Reset, Return)
     button_labels = ["Solve", "Play", "Reset", "Return"]
@@ -286,14 +298,14 @@ while running:
 
                 # Buttons: Solve / Play / Reset / Return
                 if 50 <= x <= 170:
-                    if 140 <= y <= 180:  # Solve
+                    if 170 <= y <= 210:  # Solve
                         solve()
-                    elif 200 <= y <= 240:  # Play
+                    elif 230 <= y <= 270:  # Play
                         playing = not playing
-                    elif 260 <= y <= 300:  # Reset
+                    elif 290 <= y <= 330:  # Reset
                         current_step = 0
                         playing = False
-                    elif 320 <= y <= 360:  # Return to home
+                    elif 350 <= y <= 390:  # Return to home
                         screen_state = "home"
                         playing = False
                         current_step = 0
