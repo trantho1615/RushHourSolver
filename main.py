@@ -10,6 +10,10 @@ click_sound = pygame.mixer.Sound("assets/click.wav")
 font = pygame.font.SysFont("Arial", 20)
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("Rush Hour Solver")
+# Load home screen background
+background_image = pygame.image.load("assets/rushhour.jpg").convert()
+background_image = pygame.transform.scale(background_image, (800, 600))
+
 
 # Constants
 CELL = 60
@@ -41,16 +45,32 @@ no_solution_found = False
 
 
 def draw_home_screen():
-    screen.fill((180, 220, 180))  # Light background for polish
+    screen.blit(background_image, (0, 0))  # Draw home screen background
 
     title_font = pygame.font.SysFont("Arial", 40, bold=True)
     subtitle_font = pygame.font.SysFont("Arial", 24)
 
+    # Render title text
     title = title_font.render("RUSH HOUR SOLVER", True, BLACK)
-    subtitle = subtitle_font.render("Escape the gridlock!", True, (80, 80, 80))
+    subtitle = subtitle_font.render("Escape the gridlock!", True, (50, 50, 50))
 
-    screen.blit(title, title.get_rect(center=(400, 180)))
-    screen.blit(subtitle, subtitle.get_rect(center=(400, 230)))
+    # Calculate rects
+    title_rect = title.get_rect(center=(400, 180))
+    subtitle_rect = subtitle.get_rect(center=(400, 230))
+
+    # Draw semi-transparent box behind title
+    title_bg = pygame.Surface((title_rect.width + 40, title_rect.height + 20), pygame.SRCALPHA)
+    title_bg.fill((255, 255, 255, 200))  # White box, alpha 200
+    screen.blit(title_bg, title_bg.get_rect(center=title_rect.center))
+
+    subtitle_bg = pygame.Surface((subtitle_rect.width + 30, subtitle_rect.height + 15), pygame.SRCALPHA)
+    subtitle_bg.fill((255, 255, 255, 180))  # Slightly more transparent
+    screen.blit(subtitle_bg, subtitle_bg.get_rect(center=subtitle_rect.center))
+
+    # draw the text over the box
+    screen.blit(title, title_rect)
+    screen.blit(subtitle, subtitle_rect)
+
 
     # Start Button
     pygame.draw.rect(screen, (100, 200, 100), (310, 300, 180, 50), border_radius=8)
