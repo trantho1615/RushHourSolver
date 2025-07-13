@@ -36,6 +36,8 @@ current_step = 0
 playing = False
 last_play_time = 0
 screen_state = "home"  # Only home & play now
+no_solution_found = False
+
 
 def draw_home_screen():
     screen.fill((240, 245, 255))  # Light background for polish
@@ -55,7 +57,7 @@ def draw_home_screen():
 
     # Exit Button
     pygame.draw.rect(screen, (200, 80, 80), (310, 370, 180, 50), border_radius=8)
-    screen.blit(font.render("Exit (Esc)", True, WHITE), (365, 385))
+    screen.blit(font.render("Exit", True, WHITE), (378, 385))
 
 
 def draw_board(state):
@@ -129,6 +131,13 @@ def draw_game_ui():
         screen.blit(font.render(f"Solution found", True, BLACK), (40, y_base + 120))
         screen.blit(font.render(f"in {len(solution)-1} moves.", True, BLACK), (40, y_base + 140))
 
+    # Message if no solution
+    if no_solution_found:
+        pygame.draw.rect(screen, (255, 240, 240), (30, 520, 160, 50))
+        pygame.draw.rect(screen, (200, 0, 0), (30, 520, 160, 50), 2)
+        screen.blit(font.render("No solution found", True, (200, 0, 0)), (40, 535))
+
+
 def load_map(filename):
     vehicles = set()
     with open(os.path.join("Map", filename)) as file:
@@ -140,12 +149,12 @@ def load_map(filename):
             try:
                 vehicles.add(Vehicle(vid, y, x, o))
             except ValueError as e:
-                print(f"❌ Invalid vehicle at line {i} → {line}: {e}")
+                print(f"Invalid vehicle at line {i} → {line}: {e}")
                 raise
     return Problem(vehicles)
 
 def solve():
-    global solution, current_step
+    global solution, current_step, no_solution_found
     algo = solvers[solver_idx]
     if algo == "A*":
         result = a_star_solver(problem)
@@ -157,6 +166,7 @@ def solve():
         result = dfs(problem)
     solution = result['solutions'][0] if result['solutions'] else []
     current_step = 0
+    no_solution_found = (len(solution) == 0)
 
 # Main loop
 running = True
