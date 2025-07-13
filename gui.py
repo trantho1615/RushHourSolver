@@ -62,19 +62,37 @@ def draw_home_screen():
 
 def draw_board(state):
     board = state.get_board()
+    # Draw a 6x6 grid
     for y in range(6):
         for x in range(6):
-            rect = pygame.Rect(GRID_ORIGIN[0]+x*CELL, GRID_ORIGIN[1]+y*CELL, CELL, CELL)
-            pygame.draw.rect(screen, (220,220,220), rect)
-            pygame.draw.rect(screen, BLACK, rect, 1)
-            cell = board[y][x]
-            if cell != ' ':
-                if cell not in id_colors:
-                    color = RED if cell == 'X' else COLORS[len(id_colors)%len(COLORS)]
-                    id_colors[cell] = color
-                pygame.draw.rect(screen, id_colors[cell], rect)
-                label = font.render(cell, True, BLACK)
-                screen.blit(label, label.get_rect(center=rect.center))
+            rect = pygame.Rect(GRID_ORIGIN[0] + x*CELL, GRID_ORIGIN[1] + y*CELL, CELL, CELL)
+            pygame.draw.rect(screen, (220, 220, 220), rect)  
+            pygame.draw.rect(screen, BLACK, rect, 1)         
+    # Draw vehicle
+    drawn = set()  # Distinguish ID
+
+    for vehicle in state.vehicles:
+        if vehicle.id in drawn:
+            continue
+        drawn.add(vehicle.id)
+
+        x, y = vehicle.x, vehicle.y
+        w = CELL * vehicle.length if vehicle.orientation == 'H' else CELL
+        h = CELL if vehicle.orientation == 'H' else CELL * vehicle.length
+
+        rect = pygame.Rect(GRID_ORIGIN[0]+x*CELL, GRID_ORIGIN[1]+y*CELL, w, h)
+        if vehicle.id not in id_colors:
+            color = RED if vehicle.id == 'X' else COLORS[len(id_colors)%len(COLORS)]
+            id_colors[vehicle.id] = color
+
+        pygame.draw.rect(screen, id_colors[vehicle.id], rect, border_radius=10)
+        pygame.draw.rect(screen, BLACK, rect, 2, border_radius=10)
+
+        # Draw ID for vehicle
+        label = font.render(vehicle.id, True, BLACK)
+        screen.blit(label, label.get_rect(center=rect.center))
+
+    # Exit arrow
     pygame.draw.polygon(screen, RED, [
         (GRID_ORIGIN[0] + 6*CELL + 10, GRID_ORIGIN[1] + 2*CELL + 20),
         (GRID_ORIGIN[0] + 6*CELL + 30, GRID_ORIGIN[1] + 2*CELL + 30),
@@ -82,6 +100,7 @@ def draw_board(state):
     ])
     screen.blit(font.render("EXIT", True, RED),
                 (GRID_ORIGIN[0] + 6*CELL + 35, GRID_ORIGIN[1] + 2*CELL + 20))
+
 
 def draw_game_ui():
     pygame.draw.rect(screen, (245, 245, 245), (20, 20, 200, 560))
@@ -154,7 +173,8 @@ def load_map(filename):
     return Problem(vehicles)
 
 def solve():
-    global solution, current_step, no_solution_found
+    global solution, current_step, no_solution_found, playing
+    playing = False # Prevent auto-play when solving a new map
     algo = solvers[solver_idx]
     if algo == "A*":
         result = a_star_solver(problem)
