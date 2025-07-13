@@ -174,7 +174,7 @@ def draw_game_ui():
 
     # Map selector
     screen.blit(font.render("Board:", True, BLACK), (30, 70))
-    pygame.draw.rect(screen, GRAY, (100, 70, 80, 25))
+    pygame.draw.rect(screen, GRAY, (100, 70, 92, 25))
     pygame.draw.rect(screen, (180, 180, 180), (90, 70, 20, 25))
     pygame.draw.rect(screen, (180, 180, 180), (193, 70, 20, 25))
     screen.blit(font.render("<", True, BLACK), (95, 72))
@@ -183,7 +183,7 @@ def draw_game_ui():
 
     # Solver selector
     screen.blit(font.render("Solver:", True, BLACK), (30, 100))
-    pygame.draw.rect(screen, GRAY, (110, 100, 80, 25))
+    pygame.draw.rect(screen, GRAY, (110, 100, 92, 25))
     pygame.draw.rect(screen, (180, 180, 180), (90, 100, 20, 25))
     pygame.draw.rect(screen, (180, 180, 180), (193, 100, 20, 25))
     screen.blit(font.render("<", True, BLACK), (95, 102))
@@ -208,8 +208,22 @@ def draw_game_ui():
 
     if solution:
         step_text = f"Step: {current_step}/{len(solution)-1}"
-        current_cost = sum(list(solution[i].vehicles - solution[i + 1].vehicles)[0].length for i in range(current_step))
-        total_cost = sum(list(solution[i].vehicles - solution[i + 1].vehicles)[0].length for i in range(len(solution) - 1))
+
+        def compute_cost(method):
+            cost = 0
+            for i in range(method):
+                moved = list(solution[i].vehicles - solution[i + 1].vehicles)
+                if moved:
+                    v = moved[0]
+                    if solvers[solver_idx] in ["UCS", "A*"]:
+                        cost += v.length  # Method 2: multiply by vehicle length
+                    else:
+                        cost += 1         # Method 1: each move = 1
+            return cost
+
+        current_cost = compute_cost(current_step)
+        total_cost = compute_cost(len(solution) - 1)
+
         screen.blit(font.render("Solution Info:", True, BLACK), (40, y_base + 5))
         screen.blit(font.render(step_text, True, BLACK), (40, y_base + 25))
         screen.blit(font.render(f"Current Cost: {current_cost}", True, BLACK), (40, y_base + 45))
