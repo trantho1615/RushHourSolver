@@ -62,99 +62,139 @@ def draw_home_screen():
 
 def draw_board(state):
     board = state.get_board()
-    # Draw a 6x6 grid
+
+    # Draw the background grid (6x6)
     for y in range(6):
         for x in range(6):
-            rect = pygame.Rect(GRID_ORIGIN[0] + x*CELL, GRID_ORIGIN[1] + y*CELL, CELL, CELL)
-            pygame.draw.rect(screen, (220, 220, 220), rect)  
-            pygame.draw.rect(screen, BLACK, rect, 1)         
-    # Draw vehicle
-    drawn = set()  # Distinguish ID
+            cell_rect = pygame.Rect(
+                GRID_ORIGIN[0] + x * CELL,
+                GRID_ORIGIN[1] + y * CELL,
+                CELL,
+                CELL
+            )
+            pygame.draw.rect(screen, (220, 220, 220), cell_rect)  # Cell fill
+            pygame.draw.rect(screen, BLACK, cell_rect, 1)         # Cell border
 
+    # Draw all vehicles (one ID each, centered, rounded corners)
+    drawn_ids = set()
     for vehicle in state.vehicles:
-        if vehicle.id in drawn:
+        if vehicle.id in drawn_ids:
             continue
-        drawn.add(vehicle.id)
+        drawn_ids.add(vehicle.id)
 
         x, y = vehicle.x, vehicle.y
-        w = CELL * vehicle.length if vehicle.orientation == 'H' else CELL
-        h = CELL if vehicle.orientation == 'H' else CELL * vehicle.length
+        width = CELL * vehicle.length if vehicle.orientation == 'H' else CELL
+        height = CELL if vehicle.orientation == 'H' else CELL * vehicle.length
 
-        rect = pygame.Rect(GRID_ORIGIN[0]+x*CELL, GRID_ORIGIN[1]+y*CELL, w, h)
+        vehicle_rect = pygame.Rect(
+            GRID_ORIGIN[0] + x * CELL,
+            GRID_ORIGIN[1] + y * CELL,
+            width,
+            height
+        )
+
+        # Assign color if new ID
         if vehicle.id not in id_colors:
-            color = RED if vehicle.id == 'X' else COLORS[len(id_colors)%len(COLORS)]
+            color = RED if vehicle.id == 'X' else COLORS[len(id_colors) % len(COLORS)]
             id_colors[vehicle.id] = color
 
-        pygame.draw.rect(screen, id_colors[vehicle.id], rect, border_radius=10)
-        pygame.draw.rect(screen, BLACK, rect, 2, border_radius=10)
+        # Draw the vehicle with rounded corners
+        pygame.draw.rect(screen, id_colors[vehicle.id], vehicle_rect, border_radius=12)
+        pygame.draw.rect(screen, BLACK, vehicle_rect, width=2, border_radius=12)
 
-        # Draw ID for vehicle
+        # Draw centered ID on vehicle
         label = font.render(vehicle.id, True, BLACK)
-        screen.blit(label, label.get_rect(center=rect.center))
+        screen.blit(label, label.get_rect(center=vehicle_rect.center))
 
-    # Exit arrow
-    pygame.draw.polygon(screen, RED, [
-        (GRID_ORIGIN[0] + 6*CELL + 10, GRID_ORIGIN[1] + 2*CELL + 20),
-        (GRID_ORIGIN[0] + 6*CELL + 30, GRID_ORIGIN[1] + 2*CELL + 30),
-        (GRID_ORIGIN[0] + 6*CELL + 10, GRID_ORIGIN[1] + 2*CELL + 40)
-    ])
-    screen.blit(font.render("EXIT", True, RED),
-                (GRID_ORIGIN[0] + 6*CELL + 35, GRID_ORIGIN[1] + 2*CELL + 20))
+    # Draw EXIT arrow
+    exit_arrow = [
+        (GRID_ORIGIN[0] + 6 * CELL + 10, GRID_ORIGIN[1] + 2 * CELL + 20),
+        (GRID_ORIGIN[0] + 6 * CELL + 30, GRID_ORIGIN[1] + 2 * CELL + 30),
+        (GRID_ORIGIN[0] + 6 * CELL + 10, GRID_ORIGIN[1] + 2 * CELL + 40)
+    ]
+    pygame.draw.polygon(screen, RED, exit_arrow)
+    screen.blit(
+        font.render("EXIT", True, RED),
+        (GRID_ORIGIN[0] + 6 * CELL + 35, GRID_ORIGIN[1] + 2 * CELL + 20)
+    )
+
+    # Draw a gate at the right edge of row 2 (where the red car exits)
+    gate_rect = pygame.Rect(
+        GRID_ORIGIN[0] + 6 * CELL - 4,
+        GRID_ORIGIN[1] + 2 * CELL + 4,
+        8,
+        CELL - 8
+    )
+    pygame.draw.rect(screen, (150, 0, 0), gate_rect, border_radius=3)
+    pygame.draw.rect(screen, BLACK, gate_rect, 1, border_radius=3)
+
 
 
 def draw_game_ui():
+    # Sidebar background
     pygame.draw.rect(screen, (245, 245, 245), (20, 20, 200, 560))
-    screen.blit(font.render("Rush Hour Solver", True, BLACK), (30, 30))
 
-    # Map selector
-    screen.blit(font.render("Board:", True, BLACK), (30, 70))
-    pygame.draw.rect(screen, GRAY, (100, 70, 80, 25))
-    pygame.draw.rect(screen, (180, 180, 180), (90, 70, 20, 25))
-    pygame.draw.rect(screen, (180, 180, 180), (193, 70, 20, 25))
-    screen.blit(font.render("<", True, BLACK), (95, 72))
-    screen.blit(font.render(">", True, BLACK), (195, 72))
-    screen.blit(font.render(maps[map_idx], True, BLACK), (110, 72))
+    # Rounded title box
+    title_box = pygame.Rect(30, 30, 140, 40)
+    pygame.draw.rect(screen, (180, 220, 255), title_box, border_radius=10)
+    pygame.draw.rect(screen, BLACK, title_box, 2, border_radius=10)
+    screen.blit(font.render("Rush Hour", True, BLACK), title_box.move(10, 10))
 
-    # Solver selector
-    screen.blit(font.render("Solver:", True, BLACK), (30, 100))
-    pygame.draw.rect(screen, GRAY, (110, 100, 80, 25))
-    pygame.draw.rect(screen, (180, 180, 180), (90, 100, 20, 25))
-    pygame.draw.rect(screen, (180, 180, 180), (193, 100, 20, 25))
-    screen.blit(font.render("<", True, BLACK), (95, 102))
-    screen.blit(font.render(">", True, BLACK), (195, 102))
-    screen.blit(font.render(solvers[solver_idx], True, BLACK), (110, 102))
-    pygame.draw.line(screen, GRAY, (30, 135), (200, 135), 2)
+    # Map Selector
+    screen.blit(font.render("Board:", True, BLACK), (30, 90))
+    pygame.draw.rect(screen, (210, 210, 255), (100, 90, 80, 25), border_radius=6)
+    pygame.draw.rect(screen, (150, 180, 255), (90, 90, 20, 25), border_radius=6)
+    pygame.draw.rect(screen, (150, 180, 255), (193, 90, 20, 25), border_radius=6)
+    screen.blit(font.render("<", True, BLACK), (95, 92))
+    screen.blit(font.render(">", True, BLACK), (195, 92))
+    screen.blit(font.render(maps[map_idx], True, BLACK), (110, 92))
 
-    # Buttons
-    for i, label in enumerate(["Solve", "Play", "Reset", "Return"]):
-        pygame.draw.rect(screen, (180,180,180), (50, 140 + i*60, 120, 40))
-        screen.blit(font.render(label, True, BLACK), (80, 150 + i*60))
+    # Solver Selector
+    screen.blit(font.render("Solver:", True, BLACK), (30, 125))
+    pygame.draw.rect(screen, (210, 210, 255), (110, 125, 80, 25), border_radius=6)
+    pygame.draw.rect(screen, (150, 180, 255), (90, 125, 20, 25), border_radius=6)
+    pygame.draw.rect(screen, (150, 180, 255), (193, 125, 20, 25), border_radius=6)
+    screen.blit(font.render("<", True, BLACK), (95, 127))
+    screen.blit(font.render(">", True, BLACK), (195, 127))
+    screen.blit(font.render(solvers[solver_idx], True, BLACK), (110, 127))
 
-    # Solution Info
+    pygame.draw.line(screen, GRAY, (30, 160), (200, 160), 2)
+
+    # Rounded Action Buttons (Solve, Play, Reset, Return)
+    button_labels = ["Solve", "Play", "Reset", "Return"]
+    button_colors = [(140, 220, 140), (140, 200, 255), (255, 200, 120), (255, 140, 140)]
+    for i, label in enumerate(button_labels):
+        btn_rect = pygame.Rect(50, 170 + i * 60, 120, 40)
+        pygame.draw.rect(screen, button_colors[i], btn_rect, border_radius=12)
+        pygame.draw.rect(screen, BLACK, btn_rect, 2, border_radius=12)
+        text = font.render(label, True, BLACK)
+        screen.blit(text, text.get_rect(center=btn_rect.center))
+
+    # Solution Info Box
     y_base = 400
     pygame.draw.rect(screen, WHITE, (30, y_base, 160, 100))
     pygame.draw.rect(screen, BLACK, (30, y_base, 160, 100), 1)
 
     if solution:
         step_text = f"Step: {current_step}/{len(solution)-1}"
-        current_cost = sum(list(solution[i].vehicles - solution[i+1].vehicles)[0].length for i in range(current_step))
-        total_cost = sum(list(solution[i].vehicles - solution[i+1].vehicles)[0].length for i in range(len(solution)-1))
+        current_cost = sum(list(solution[i].vehicles - solution[i + 1].vehicles)[0].length for i in range(current_step))
+        total_cost = sum(list(solution[i].vehicles - solution[i + 1].vehicles)[0].length for i in range(len(solution) - 1))
         screen.blit(font.render("Solution Info:", True, BLACK), (40, y_base + 5))
         screen.blit(font.render(step_text, True, BLACK), (40, y_base + 25))
         screen.blit(font.render(f"Current Cost: {current_cost}", True, BLACK), (40, y_base + 45))
         screen.blit(font.render(f"Total Cost: {total_cost}", True, BLACK), (40, y_base + 65))
 
-        # Enlarged bottom message box
+        # Result message box
         pygame.draw.rect(screen, WHITE, (30, y_base + 110, 160, 60))
         pygame.draw.rect(screen, BLACK, (30, y_base + 110, 160, 60), 1)
         screen.blit(font.render(f"Solution found", True, BLACK), (40, y_base + 120))
         screen.blit(font.render(f"in {len(solution)-1} moves.", True, BLACK), (40, y_base + 140))
 
-    # Message if no solution
     if no_solution_found:
-        pygame.draw.rect(screen, (255, 240, 240), (30, 520, 160, 50))
-        pygame.draw.rect(screen, (200, 0, 0), (30, 520, 160, 50), 2)
+        pygame.draw.rect(screen, (255, 240, 240), (30, 520, 160, 50), border_radius=8)
+        pygame.draw.rect(screen, (200, 0, 0), (30, 520, 160, 50), width=2, border_radius=8)
         screen.blit(font.render("No solution found", True, (200, 0, 0)), (40, 535))
+
 
 
 def load_map(filename):
